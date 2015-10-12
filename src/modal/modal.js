@@ -276,8 +276,8 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.stackedMap'])
       });
 
       function removeModalWindow(modalInstance, elementToReceiveFocus) {
-        var body = $document.find('body').eq(0);
         var modalWindow = openedWindows.get(modalInstance).value;
+        var container = $document.find(modalWindow.container).eq(0);
 
         //clean up the stack
         openedWindows.remove(modalInstance);
@@ -285,7 +285,7 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.stackedMap'])
         removeAfterAnimate(modalWindow.modalDomEl, modalWindow.modalScope, function() {
           var modalBodyClass = modalWindow.openedClass || OPENED_MODAL_CLASS;
           openedClasses.remove(modalBodyClass, modalInstance);
-          body.toggleClass(modalBodyClass, openedClasses.hasKey(modalBodyClass));
+          container.toggleClass(modalBodyClass, openedClasses.hasKey(modalBodyClass));
           toggleTopWindowClass(true);
         });
         checkRemoveBackdrop();
@@ -294,7 +294,7 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.stackedMap'])
         if (elementToReceiveFocus && elementToReceiveFocus.focus) {
           elementToReceiveFocus.focus();
         } else {
-          body.focus();
+          container.focus();
         }
       }
 
@@ -413,13 +413,18 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.stackedMap'])
           backdrop: modal.backdrop,
           keyboard: modal.keyboard,
           openedClass: modal.openedClass,
-          windowTopClass: modal.windowTopClass
+          windowTopClass: modal.windowTopClass,
+          container: modal.container
         });
 
         openedClasses.put(modalBodyClass, modalInstance);
 
-        var body = $document.find('body').eq(0),
+        var container = $document.find(modal.container).eq(0),
             currBackdropIndex = backdropIndex();
+
+        if (!container.length) {
+          throw new Error('Container not found. Make sure that the container passed is in DOM.');
+        }
 
         if (currBackdropIndex >= 0 && !backdropDomEl) {
           backdropScope = $rootScope.$new(true);
@@ -430,7 +435,7 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.stackedMap'])
             angularBackgroundDomEl.attr('modal-animation', 'true');
           }
           backdropDomEl = $compile(angularBackgroundDomEl)(backdropScope);
-          body.append(backdropDomEl);
+          container.append(backdropDomEl);
         }
 
         var angularDomEl = angular.element('<div uib-modal-window="modal-window"></div>');
@@ -449,8 +454,8 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.stackedMap'])
         var modalDomEl = $compile(angularDomEl)(modal.scope);
         openedWindows.top().value.modalDomEl = modalDomEl;
         openedWindows.top().value.modalOpener = modalOpener;
-        body.append(modalDomEl);
-        body.addClass(modalBodyClass);
+        container.append(modalDomEl);
+        container.addClass(modalBodyClass);
 
         $modalStack.clearFocusListCache();
       };
@@ -603,6 +608,7 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.stackedMap'])
             //merge and clean up options
             modalOptions = angular.extend({}, $modalProvider.options, modalOptions);
             modalOptions.resolve = modalOptions.resolve || {};
+            modalOptions.container = modalOptions.container || 'body';
 
             //verify options
             if (!modalOptions.template && !modalOptions.templateUrl) {
@@ -669,7 +675,8 @@ angular.module('ui.bootstrap.modal', ['ui.bootstrap.stackedMap'])
                   windowClass: modalOptions.windowClass,
                   windowTemplateUrl: modalOptions.windowTemplateUrl,
                   size: modalOptions.size,
-                  openedClass: modalOptions.openedClass
+                  openedClass: modalOptions.openedClass,
+                  container: modalOptions.container
                 });
                 modalOpenedDeferred.resolve(true);
 
