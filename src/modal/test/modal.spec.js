@@ -833,6 +833,48 @@ describe('$uibModal', function () {
         expect($document.find('.modal-backdrop')).not.toHaveClass('fade');
       });
     });
+    
+    describe('container', function() {
+      it('should be added to body by default', function() {
+        var modal = open({template: '<div>Content</div>'});
+
+        expect($document).toHaveModalsOpen(1);
+        expect($document).toHaveModalOpenWithContent('Content', 'div');
+      });
+
+      it('should not be added to body if container is passed', function() {
+        var element = angular.element('<section>Some content</section>');
+        angular.element(document.body).append(element);
+
+        var modal = open({template: '<div>Content</div>', container: element});
+
+        expect($document).not.toHaveModalOpenWithContent('Content', 'div');
+      });
+
+      it('should be added to container if container is passed', function() {
+        var element = angular.element('<section>Some content</section>');
+        angular.element(document.body).append(element);
+
+        expect($document.find('section').children('div.modal').length).toBe(0);
+        open({template: '<div>Content</div>', container: element});
+        expect($document.find('section').children('div.modal').length).toBe(1);
+      });
+
+      it('should throw error if container is not found', function() {
+        expect(function(){
+          open({template: '<div>Content</div>', container: $document.find('aside')});
+        }).toThrow(new Error('Container not found. Make sure that the container passed is in DOM.'));
+      });
+
+      it('should be removed from container when dismissed', function() {
+        var modal = open({template: '<div>Content</div>'});
+
+        expect($document).toHaveModalsOpen(1);
+
+        dismiss(modal);
+        expect($document).toHaveModalsOpen(0);
+      });
+    });
 
     describe('openedClass', function() {
       var body;
